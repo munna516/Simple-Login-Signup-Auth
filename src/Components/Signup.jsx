@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FcGoogle } from "react-icons/fc";
 import { VscGithub } from "react-icons/vsc";
-import { GithubAuthProvider, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { createUserWithEmailAndPassword, GithubAuthProvider, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '../Firebase/firebase.init';
 const Signup = () => {
     const [success, setSuccess] = useState(false)
+    const [errorMessage, setErrorMessage] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
 
     const navigate = useNavigate()
     const googleProvider = new GoogleAuthProvider()
@@ -36,6 +39,32 @@ const Signup = () => {
     // Handle Form Submit
     const handleSubmit = e => {
         e.preventDefault()
+        const email = e.target.email.value
+        const name = e.target.name.value
+        const password = e.target.password.value
+
+        setSuccess(false)
+        setErrorMessage('')
+
+        if (password.length < 6) {
+            setErrorMessage('Password Must Contain 6 characters')
+            return
+        }
+        const regularExp = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+
+        if (!regularExp.test(password)) {
+            setErrorMessage('Password must contain upper case,lower case, digit and special characters.')
+            return
+        }
+
+        createUserWithEmailAndPassword(auth, email, password)
+            .then(result => {
+                setSuccess(true)
+            })
+            .catch(error => {
+                console.log(error);
+                setErrorMessage(error?.message)
+            })
     }
     return (
         <>
@@ -54,13 +83,17 @@ const Signup = () => {
                                 <label className="label">
                                     <span className="label-text">Email</span>
                                 </label>
-                                <input type="email" placeholder="email" className="input input-bordered" required />
+                                <input type="email" name='email' placeholder="email" className="input input-bordered" required />
                             </div>
-                            <div className="form-control">
+                            <div className="form-control relative">
                                 <label className="label">
                                     <span className="label-text">Password</span>
                                 </label>
-                                <input type="password" placeholder="password" className="input input-bordered" required />
+                                <input type={showPassword ? 'text' : "password"} name='password' placeholder="password" className="input input-bordered" required />
+
+                                <button onClick={() => setShowPassword(!showPassword)} className='text-lg absolute top-12 right-4'>
+                                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                </button>
 
                             </div>
                             <div className="form-control mt-6">
@@ -75,6 +108,9 @@ const Signup = () => {
 
                         {
                             success && <p className='text-center text-xl text-green-400 pb-3'>Sign Up successful</p>
+                        }
+                        {
+                            errorMessage && <p className='text-center text-red-500 pb-2'>{errorMessage}</p>
                         }
                     </div>
                 </div>
